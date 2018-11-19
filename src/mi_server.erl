@@ -136,7 +136,7 @@ stop(Server) ->
 init([Root]) ->
     lager:debug("loading merge_index '~s'", [Root]),
     %% Seed the random generator...
-    random:seed(now()),
+    rand:seed(exs1024s, erlang:timestamp()),
 
     %% Load from disk...
     filelib:ensure_dir(join(Root, "ignore")),

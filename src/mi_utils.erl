@@ -92,10 +92,10 @@ hash_signature(_Term) ->
 
 hash_signature_binary(<<C, Rest/binary>>, Acc) ->
     case Acc rem 2 of
-        0 -> 
+        0 ->
             RotatedAcc = ((Acc bsl 1) band 255),
             hash_signature_binary(Rest, RotatedAcc bxor C);
-        1 -> 
+        1 ->
             RotatedAcc = (((Acc bsl 1) + 1) band 255),
             hash_signature_binary(Rest, RotatedAcc bxor C)
     end;
@@ -105,5 +105,5 @@ hash_signature_binary(<<>>, Acc) ->
 %% Add some random variation (plus or minus 25%) to the rollover size
 %% so that we don't get all buffers rolling over at the same time.
 fuzz(Value, FuzzPercent) ->
-    Scale = 1 + (((random:uniform(100) - 50)/100) * FuzzPercent * 2),
+    Scale = 1 + (((rand:uniform(100) - 50)/100) * FuzzPercent * 2),
     Value * Scale.
