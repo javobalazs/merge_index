@@ -31,6 +31,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
+    lager:warning("merge_index starting"),
     mi_sup:start_link().
 
 stop(_State) ->

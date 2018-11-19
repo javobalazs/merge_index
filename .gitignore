@@ -2,3 +2,7 @@ ebin
 .eunit
 doc
 deps
+
+/.elixir_ls
+/_build
+/log

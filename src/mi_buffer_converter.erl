@@ -1,6 +1,6 @@
 %% -------------------------------------------------------------------
 %%
-%% mi_buffer_converter: supervises transformation of a buffer 
+%% mi_buffer_converter: supervises transformation of a buffer
 %%                      into a segment file.
 %%
 %% Copyright (c) 2007-2011 Basho Technologies, Inc.  All Rights Reserved.
@@ -64,15 +64,20 @@ convert(Parent, Server, Root, Buffer) ->
         error:Reason ->
             case mi_buffer:exists(Buffer) of
                 false ->
+                    % lager:warning("conversion for buffer ~p failed, probably"
+                    %               " because the buffer has been dropped ~p",
+                    %               [mi_buffer:filename(Buffer),
+                    %                erlang:get_stacktrace()]),
                     lager:warning("conversion for buffer ~p failed, probably"
-                                  " because the buffer has been dropped ~p",
-                                  [mi_buffer:filename(Buffer),
-                                   erlang:get_stacktrace()]),
+                                  " because the buffer has been dropped",
+                                  [mi_buffer:filename(Buffer)]),
                     exit(normal);
                 true ->
+                    % lager:error("conversion for buffer ~p failed with trace ~p",
+                    %             [mi_buffer:filename(Buffer),
+                    %              erlang:get_stacktrace()]),
                     lager:error("conversion for buffer ~p failed with trace ~p",
-                                [mi_buffer:filename(Buffer),
-                                 erlang:get_stacktrace()]),
+                                [mi_buffer:filename(Buffer)]),
                     exit({error, Reason})
             end
     end.

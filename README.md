@@ -1,3 +1,20 @@
+# Elixir-friendly version
+
+Basically the same as the old one, warnings removed.
+It's using `lager` for logging, so you need to put the following into `config/config.exs` (or use `lager` directly):
+
+```elixir
+config :lager,
+  # Stop lager redirecting :error_logger messages
+  error_logger_redirect: false,
+  # Stop lager removing Logger's :error_logger handler
+  error_logger_whitelist: [Logger.ErrorHandler],
+  # Stop lager writing a crash log
+  crash_log: false,
+  # Use LagerLogger as lager's only handler.
+  handlers: [{LagerLogger, [level: :debug]}]
+```
+
 # Overview
 
 [![Build Status](https://secure.travis-ci.org/basho/merge_index.png?branch=master)](http://travis-ci.org/basho/merge_index)
@@ -15,19 +32,19 @@ MergeIndex has the following characteristics:
 * Fast write performance; handles "spiky" situations with high write
   loads gracefully.
 * Fast read performance for single lookups.
-* Moderately fast read performance for range queries. 
+* Moderately fast read performance for range queries.
 * "Immutable" data files, so the system can be stopped hard with no ill effects.
 * Timestamp-based conflict resolution.
 * Relatively low RAM usage.
 * Stores data in compressed form.
-  
+
 And some tradeoffs:
 
 * Range queries can cause spiky RAM usage, depending on range size.
 * Needs a high number of file handles. During extremely high write
   loads for extended periods of time, this can exhaust file handles
   and ETS tables if the system is not given a chance to recover.
-* High disk churn during segment compaction. 
+* High disk churn during segment compaction.
 
 
 # Data Model
@@ -38,7 +55,7 @@ for document data, but it can be considered a general purpose index.)
 
 The hierarchy is:
 
-* **Index** - Top level. For example: `shoes`. 
+* **Index** - Top level. For example: `shoes`.
 * **Field** - Second level. For example: `color`.
 * **Term** - Third level. For example: `red`.
 
@@ -66,7 +83,7 @@ These six fields together form a **Posting**. For example:
   database. Note that the database is NOT thread safe, and this is NOT
   enforced by the software. You should only have one Pid per
   directory, otherwise your data will be corrupted.
-  
+
 * `merge_index:index(Pid, Postings)` - Index a list of postings.
 
 * `merge_index:lookup(Pid, Index, Field, Term)` - Returns an iterator
@@ -78,7 +95,7 @@ These six fields together form a **Posting**. For example:
 
 * `merge_index:lookup_sync(Pid, Index, Field, Term)` - Returns a list of
   `{Value, Properties}` records.
-  
+
 * `merge_index:range(Pid, Index, Field, StartTerm, EndTerm)` - Returns
   an iterator that will yield all of the `{Value, Properties}` records
   matching the provided range, inclusive. The iterator should be
@@ -102,7 +119,7 @@ These six fields together form a **Posting**. For example:
 
 * `merge_index:drop(Pid)` - Delete a MergeIndex database. This will
   delete your data.
-  
+
 * `merge_index:stop(Pid)` - Close a merge_index database.
 
 # Example Usage
@@ -115,45 +132,45 @@ performs a lookup and range query.
     application:start(merge_index),
     {ok, Pid} = merge_index:start_link("./merge_index_data"),
     Filter = fun(_,_) -> true end,
-     
+
     %% Index a posting...
     merge_index:index(Pid, [{"index", "field", "term", "value1", [], 1}]),
-     
+
     %% Run a query, get results back as a list...
     List1 = merge_index:lookup_sync(Pid, "index", "field", "term", Filter),
     io:format("lookup_sync1:~n~p~n", [List1]),
-     
-    %% Run a query, get results back as an iterator. 
+
+    %% Run a query, get results back as an iterator.
     %% Iterator returns {Result, NewIterator} or 'eof'.
     Iterator1 = merge_index:lookup(Pid, "index", "field", "term", Filter),
     {Result1, Iterator2} = Iterator1(),
     eof = Iterator2(),
     io:format("lookup:~n~p~n", [Result1]),
-     
+
     %% Index multiple postings...
     merge_index:index(Pid, [
         {"index", "field", "term", "value1", [], 2},
         {"index", "field", "term", "value2", [], 2},
         {"index", "field", "term", "value3", [], 2}
     ]),
-     
+
     %% Run another query...
     List2 = merge_index:lookup_sync(Pid, "index", "field", "term", Filter),
     io:format("lookup_sync2:~n~p~n", [List2]),
-     
+
     %% Delete some postings...
     merge_index:index(Pid, [
         {"index", "field", "term", "value1", undefined, 3},
         {"index", "field", "term", "value3", undefined, 3}
     ]),
-     
+
     %% Run another query...
     List3 = merge_index:lookup_sync(Pid, "index", "field", "term", Filter),
     io:format("lookup_sync2:~n~p~n", [List3]),
-     
+
     %% Delete the database.
     merge_index:drop(Pid),
-     
+
     %% Close the database.
     merge_index:stop(Pid).
 
@@ -227,14 +244,14 @@ written to the buffer. Once a buffer reaches a certain size, it is
 converted to a segment.
 
 MergeIndex opens the ETS table as a `duplicate_bag`, keyed on `{Index, Field,
-Term}`. Postings are written to the buffer in a batch. 
+Term}`. Postings are written to the buffer in a batch.
 
 At query time, the MergeIndex performs an `ets:lookup/N` to retrieve
 matching postings, sorts them, and wraps them in an iterator.
 
 Range queries work slightly differently. MergeIndex gets a list of
 keys from the table, filters the keys according to what matches the
-range, and then returns an iterator for each key. 
+range, and then returns an iterator for each key.
 
 Buffer contents are also stored on disk in an append-only log file,
 named `buffer.<NUMBER>`. The format is simple: a 4-byte unsigned
@@ -317,7 +334,7 @@ The advantage of compaction is that it moves the values for a given
 key closer together on disk, and reduces the number of disk seeks
 necessary to find the values for a given lookup. The disadvantage of a
 compaction is that it requires the system to rewrite all of the data
-involved in the compaction. 
+involved in the compaction.
 
 When the system decides to perform a compaction, it focuses on the
 smallest segments first. This ensures we get the optimal "bang for our
@@ -343,7 +360,7 @@ offsets table. While writing, the segment-in-progress is marked with a
 file of the same name with a ".deleted" extension, ensuring that if
 the system crashes and restarts, then it will be removed. Once
 finished, the obsolete segments are marked with files with ".deleted"
-extensions. 
+extensions.
 
 Note: That this is the same process used when rolling a single buffer
 into a segment.
@@ -371,7 +388,7 @@ released and the obsolete buffers or segments deleted.
 ## Overview
 
 MergeIndex exposes a number of dials to tweak operations and RAM
-usage. 
+usage.
 
 The most important MergeIndex setting in terms of memory usage is
 `buffer_rollover_size`. This affects how large the buffer is allowed
@@ -384,7 +401,7 @@ of `segment_full_read_size` and `max_compact_segments`. During
 compaction, the system will completely page any segments smaller than
 the `segment_full_read_size` value into memory. This should generally
 be as large or larger than the
-`buffer_rollover_size`. 
+`buffer_rollover_size`.
 
 `max_compact_segments` is the maximum number of segments to compact at
 one time. The higher this number, the more segments MergeIndex can
@@ -392,7 +409,7 @@ involve in each compaction. In the worst case, a compaction could take
 (`segment_full_read_size` * `max_compact_segments`) bytes of RAM.
 
 The rest of the settings have a much smaller impact on performance and
-memory usage, and exist mainly for tweaking and special cases. 
+memory usage, and exist mainly for tweaking and special cases.
 
 ## Full List of Settings
 
@@ -424,7 +441,7 @@ memory usage, and exist mainly for tweaking and special cases.
 * `segment_query_read_ahead_size` - The number of bytes to allocate to
   the read-ahead buffer for reading data files during a query. Default is
   65k. In practice, since we are reading compressed lists of keys from
-  data files, it is okay to keep this number quite small. 
+  data files, it is okay to keep this number quite small.
 * `segment_compact_read_ahead_size` - The number of bytes to allocate
   to the read-ahead buffer for reading data files during
   compaction. During compaction, the system is reading from multiple
@@ -473,7 +490,7 @@ memory usage, and exist mainly for tweaking and special cases.
   level to use when compressing data. Default is 1. Valid values are 1
   through 9.
 
-A number of configuration settings are fuzzed: 
+A number of configuration settings are fuzzed:
 
 * `buffer_rollover_size` by 25%
 * `buffer_delayed_write_size` by 10%
@@ -493,12 +510,12 @@ Run the following command to check how many buffers are currently
 open:
 
     find <PATH> -name "buffer.*" | wc -l
-    
+
 Run the following command to check how many segments are currently
 open:
 
     find <PATH> -name "segment.*.data" | wc -l
-    
+
 Run the following command to determine whether a compaction is
 currently in progress:
 
@@ -510,19 +527,19 @@ Run the following code in the Erlang shell to see how much space the
 in-memory buffers are consuming:
 
     WordSize = erlang:system_info(wordsize),
-    F = fun(X, Acc) -> 
+    F = fun(X, Acc) ->
         case ets:info(X, name) == 'buffer' of
             true -> Acc + (ets:info(X, memory) * WordSize);
             false -> Acc
         end
     end,
     lists:foldl(F, 0, ets:all()).
-    
+
 Run the following code in the Erlang shell to see how much space the
 segment offset tables are consuming:
 
     WordSize = erlang:system_info(wordsize),
-    F = fun(X, Acc) -> 
+    F = fun(X, Acc) ->
         case ets:info(X, name) == 'segment_offsets' of
             true -> Acc + (ets:info(X, memory) * WordSize);
             false -> Acc
