@@ -1,7 +1,7 @@
 use Mix.Config
 
 config :merge_index,
-  data_root: 'data/merge_index',
+  # data_root: 'data/merge_index',
   buffer_rollover_size: 1_048_576,
   buffer_delayed_write_size: 524_288,
   buffer_delayed_write_ms: 2000,
@@ -19,6 +19,7 @@ config :merge_index,
   segment_values_compression_threshold: 0,
   segment_values_compression_level: 1
 
+# The original stuff
 # src/merge_index.app.src
 # {application, merge_index,
 #     [{description, "Merge-Index Data Store"},

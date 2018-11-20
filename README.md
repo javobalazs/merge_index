@@ -1,7 +1,8 @@
 # Elixir-friendly version
 
 Basically the same as the old one, warnings removed.
-It's using `lager` for logging, so you need to put the following into `config/config.exs` (or use `lager` directly):
+`merge_index` is using `lager` for logging, so you need to put the following into `config/config.exs` of the
+**project that is using `merge_index`** as a depencendy (or use `lager` directly):
 
 ```elixir
 config :lager,
@@ -14,6 +15,38 @@ config :lager,
   # Use LagerLogger as lager's only handler.
   handlers: [{LagerLogger, [level: :debug]}]
 ```
+
+Later on I will eliminate `lager` and use Elixir's `Logger` directly. It's not straightforward, `Logger`'s doing some source code transformations.
+
+Also, you've to put the parameters below into `config/config.exs` of the **project that is using `merge_index`**:
+
+```elixir
+config :merge_index,
+  # data_root: 'data/merge_index',
+  buffer_rollover_size: 1_048_576,
+  buffer_delayed_write_size: 524_288,
+  buffer_delayed_write_ms: 2000,
+  compact_mod_fun: {:mi_segment, :compact_by_average},
+  compact_staleness_threshold: {1, :hours},
+  max_compact_segments: 20,
+  segment_query_read_ahead_size: 65536,
+  segment_compact_read_ahead_size: 5_242_880,
+  segment_file_buffer_size: 20_971_520,
+  segment_delayed_write_size: 20_971_520,
+  segment_delayed_write_ms: 10000,
+  segment_full_read_size: 5_242_880,
+  segment_block_size: 32767,
+  segment_values_staging_size: 1000,
+  segment_values_compression_threshold: 0,
+  segment_values_compression_level: 1
+```
+
+Later these will be defaults so users won't have to worry about messing up `config/config.exs`.
+Note: `data_root` has been in the original configuration but it's not used at all in the actual code.
+I kept it as a reminder to the old config.
+
+The above parameters are all in the `config/config.exs` file of this project too, but putting them there
+has no effect on projects using this one as a dependency.
 
 # Overview
 

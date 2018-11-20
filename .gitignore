@@ -6,3 +6,4 @@ deps
 /.elixir_ls
 /_build
 /log
+/data
