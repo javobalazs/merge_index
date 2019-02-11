@@ -136,7 +136,9 @@ stop(Server) ->
 init([Root]) ->
     lager:debug("loading merge_index '~s'", [Root]),
     %% Seed the random generator...
-    rand:seed(exs1024s, erlang:timestamp()),
+    % TODO bring back exs1024s when OTP20 is available to TrueOS
+    % rand:seed(exs1024s, erlang:timestamp()),
+    rand:seed(exs1024, erlang:timestamp()),
 
     %% Load from disk...
     filelib:ensure_dir(join(Root, "ignore")),
